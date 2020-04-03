@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8" />
@@ -17,10 +16,10 @@
       <audio controls crossorigin="anonymous"></audio>
     </div>
     <div id="buttons">
-      <button>母</button>
-      <button>母</button>
-      <button>母</button>
-      <button>母</button>
+      <button accesskey="h">母</button>
+      <button accesskey="j">母</button>
+      <button accesskey="k">母</button>
+      <button accesskey="l">母</button>
     </div>
     <div id="status">
       Domain: <span id="domain"></span>
@@ -42,13 +41,19 @@
         return state.chars[index];
       }
 
-      function pickOptions() {
+      function pickOptions(correct) {
         let options = [];
         while (options.length < 4) {
           let c = pickChar();
           if (!options.includes(c)) {
             options.push(c);
           }
+        }
+
+        // Make sure correct option is among them.
+        if (!options.includes(state.correctChar)) {
+            const index = Math.floor(Math.random() * options.length);
+            options[index] = state.correctChar;
         }
         return options;
       }
@@ -60,10 +65,9 @@
       }
 
       function ask() {
-        // TODO make sure the correct character is in the set of options
-        const audios = document.querySelectorAll("audio");
-        const buttons = document.querySelectorAll("button");
+        state.correctChar = pickChar();
 
+        const buttons = document.querySelectorAll("button");
         const options = pickOptions();
         for (let i = 0; i < 4; i++) {
           const option = options[i];
@@ -71,10 +75,9 @@
           buttons[i].removeAttribute("disabled");
         }
 
-        const correct = pickChar();
-        state.correctChar = correct["char"];
+        const audios = document.querySelectorAll("audio");
         for (let i = 0; i < 4; i++) {
-          const audioSrc = correct.audio[i];
+          const audioSrc = state.correctChar.audio[i];
           if (audioSrc) {
             audios[i].setAttribute("src", audioSrc);
             audios[i].style.display = '';
@@ -94,15 +97,19 @@
         state.timers = [];
       }
 
+      function isCorrectGuess(clickedChar) {
+        // check whether pinyin matches, to also accept characters with the same pronunciation
+        return clickedChar["char"] === state.correctChar["char"] || clickedChar["pinyin"] === state.correctChar["pinyin"];
+      }
+
       function buttonClicked(evt) {
         state.attempts += 1;
-        const clickedChar = this.textContent;
-        // TODO check whether pinyin matches, to also accept characters with the same pronunciation
-        if (clickedChar === state.correctChar) {
+        const clickedChar = state.chars[this.textContent];
+        if (isCorrectGuess(clickedChar)) {
           stopTimers();
 
           state.correct += 1;
-          if (state.correct / state.attempts > 0.9) {
+          if (state.correct / state.attempts > 0.9 && attempts > domain * 5) {
             state.domain += 1;
           }
           
@@ -121,6 +128,11 @@
           button.addEventListener("click", buttonClicked);
         }
 
+        document.body.addEventListener("keypress", function (evt) {
+            document.querySelector(`button[accesskey="${evt.key}"]`).click();
+        });
+
+        updateStatistics();
         ask();
       }
 
