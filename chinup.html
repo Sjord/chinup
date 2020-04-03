@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <style type="text/css">
+      button {
+        font-size: 100px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="audio">
+      <audio controls crossorigin="anonymous"></audio>
+      <audio controls crossorigin="anonymous"></audio>
+      <audio controls crossorigin="anonymous"></audio>
+      <audio controls crossorigin="anonymous"></audio>
+    </div>
+    <div id="buttons">
+      <button>母</button>
+      <button>母</button>
+      <button>母</button>
+      <button>母</button>
+    </div>
+    <div id="status">
+      Domain: <span id="domain"></span>
+      Correct: <span id="correct"></span>/<span id="attempts"></span>
+    </div>
+    
+    <script>
+      const state = {
+        correctChar: null,
+        chars: [],
+        domain: 4,
+        attempts: 0,
+        correct: 0,
+        timers: [],
+      };
+
+      function pickChar() {
+        const index = Math.floor(Math.random() * state.domain);
+        return state.chars[index];
+      }
+
+      function pickOptions() {
+        let options = [];
+        while (options.length < 4) {
+          let c = pickChar();
+          if (!options.includes(c)) {
+            options.push(c);
+          }
+        }
+        return options;
+      }
+
+      function updateStatistics() {
+        for (const key of ["domain", "attempts", "correct"]) {
+          document.getElementById(key).textContent = state[key];
+        }
+      }
+
+      function ask() {
+        // TODO make sure the correct character is in the set of options
+        const audios = document.querySelectorAll("audio");
+        const buttons = document.querySelectorAll("button");
+
+        const options = pickOptions();
+        for (let i = 0; i < 4; i++) {
+          const option = options[i];
+          buttons[i].textContent = option["char"];
+          buttons[i].removeAttribute("disabled");
+        }
+
+        const correct = pickChar();
+        state.correctChar = correct["char"];
+        for (let i = 0; i < 4; i++) {
+          const audioSrc = correct.audio[i];
+          if (audioSrc) {
+            audios[i].setAttribute("src", audioSrc);
+            audios[i].style.display = '';
+            state.timers.push(setTimeout(function () {
+              audios[i].play();
+            }, 1000 * i));
+          } else {
+            audios[i].style.display = 'none';
+          }
+        }
+      }
+
+      function stopTimers() {
+        for (const timer of state.timers) {
+          clearTimeout(timer);
+        }
+        state.timers = [];
+      }
+
+      function buttonClicked(evt) {
+        state.attempts += 1;
+        const clickedChar = this.textContent;
+        // TODO check whether pinyin matches, to also accept characters with the same pronunciation
+        if (clickedChar === state.correctChar) {
+          stopTimers();
+
+          state.correct += 1;
+          if (state.correct / state.attempts > 0.9) {
+            state.domain += 1;
+          }
+          
+          ask();
+        } else {
+          this.setAttribute("disabled", "disabled");
+        }
+        updateStatistics();
+      }
+
+      function main(chars) {
+        state.chars = chars;
+
+        const buttons = document.querySelectorAll("button");
+        for (const button of buttons) {
+          button.addEventListener("click", buttonClicked);
+        }
+
+        ask();
+      }
+
+      fetch("chars.json").then(response => response.json()).then(chars => main(chars));
+      
+    </script>
