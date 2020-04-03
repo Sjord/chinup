@@ -97,19 +97,32 @@
         state.timers = [];
       }
 
+      function getCharData(character) {
+        for (const ch of state.chars) {
+          if (ch["char"] === character) {
+            return ch;
+          }
+        }
+      }
+
       function isCorrectGuess(clickedChar) {
+        if (clickedChar === state.correctChar["char"]) {
+          return true;
+        }
+
         // check whether pinyin matches, to also accept characters with the same pronunciation
-        return clickedChar["char"] === state.correctChar["char"] || clickedChar["pinyin"] === state.correctChar["pinyin"];
+        const charData = getCharData(clickedChar)
+        return charData.pinyin == state.correctChar.pinyin;
       }
 
       function buttonClicked(evt) {
         state.attempts += 1;
-        const clickedChar = state.chars[this.textContent];
+        const clickedChar = this.textContent;
         if (isCorrectGuess(clickedChar)) {
           stopTimers();
 
           state.correct += 1;
-          if (state.correct / state.attempts > 0.9 && attempts > domain * 5) {
+          if (state.correct / state.attempts > 0.9 && state.attempts > state.domain * 4) {
             state.domain += 1;
           }
           
