@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <style type="text/css">
-      button {
+      #buttons button {
         font-size: 100px;
       }
     </style>
@@ -14,6 +14,7 @@
       <audio controls crossorigin="anonymous"></audio>
       <audio controls crossorigin="anonymous"></audio>
       <audio controls crossorigin="anonymous"></audio>
+      <button accesskey="r" id="replay">重播</button>
     </div>
     <div id="buttons">
       <button accesskey="h">母</button>
@@ -24,6 +25,7 @@
     <div id="status">
       Domain: <span id="domain"></span>
       Correct: <span id="correct"></span>/<span id="attempts"></span>
+      Score: <span id="score"></span>%
     </div>
     
     <script>
@@ -34,6 +36,7 @@
         attempts: 0,
         correct: 0,
         timers: [],
+        score: 100,
       };
 
       function pickChar() {
@@ -59,7 +62,7 @@
       }
 
       function updateStatistics() {
-        for (const key of ["domain", "attempts", "correct"]) {
+        for (const key of ["domain", "attempts", "correct", "score"]) {
           document.getElementById(key).textContent = state[key];
         }
       }
@@ -67,7 +70,7 @@
       function ask() {
         state.correctChar = pickChar();
 
-        const buttons = document.querySelectorAll("button");
+        const buttons = document.querySelectorAll("#buttons button");
         const options = pickOptions();
         for (let i = 0; i < 4; i++) {
           const option = options[i];
@@ -80,13 +83,24 @@
           const audioSrc = state.correctChar.audio[i];
           if (audioSrc) {
             audios[i].setAttribute("src", audioSrc);
+            audios[i].removeAttribute("disabled");
             audios[i].style.display = '';
-            state.timers.push(setTimeout(function () {
-              audios[i].play();
-            }, 1000 * i));
           } else {
+            audios[i].setAttribute("disabled", "disabled");
+            audios[i].removeAttribute("src");
             audios[i].style.display = 'none';
           }
+        }
+        playAudio();
+      }
+
+      function playAudio() {
+        stopTimers();
+        const audios = document.querySelectorAll("audio:not([disabled])");
+        for (let i = 0; i < audios.length; i++) {
+          state.timers.push(setTimeout(function () {
+            audios[i].play();
+          }, 1000 * i));
         }
       }
 
@@ -117,13 +131,20 @@
 
       function buttonClicked(evt) {
         state.attempts += 1;
+        state.score = Math.floor(state.score * 0.9);
+
         const clickedChar = this.textContent;
         if (isCorrectGuess(clickedChar)) {
           stopTimers();
 
           state.correct += 1;
-          if (state.correct / state.attempts > 0.9 && state.attempts > state.domain * 4) {
+          state.score += 10;
+
+          if (state.score >= 80) {
             state.domain += 1;
+          }
+          if (state.score < 70 && state.domain > 4) {
+            state.domain -= 1;
           }
           
           ask();
@@ -136,7 +157,7 @@
       function main(chars) {
         state.chars = chars;
 
-        const buttons = document.querySelectorAll("button");
+        const buttons = document.querySelectorAll("#buttons button");
         for (const button of buttons) {
           button.addEventListener("click", buttonClicked);
         }
@@ -144,6 +165,8 @@
         document.body.addEventListener("keypress", function (evt) {
             document.querySelector(`button[accesskey="${evt.key}"]`).click();
         });
+
+        document.querySelector("#replay").addEventListener("click", playAudio);
 
         updateStatistics();
         ask();
