@@ -6,6 +6,9 @@
       #buttons button {
         font-size: 100px;
       }
+      .correct {
+        color: green;
+      }
     </style>
   </head>
   <body>
@@ -136,6 +139,7 @@
         const clickedChar = this.textContent;
         if (isCorrectGuess(clickedChar)) {
           stopTimers();
+          this.setAttribute("class", "correct");
 
           state.correct += 1;
           state.score += 10;
@@ -147,7 +151,10 @@
             state.domain -= 1;
           }
           
-          ask();
+          setTimeout(function() {
+            this.removeAttribute("class");
+            ask();
+          }.bind(this), 300);
         } else {
           this.setAttribute("disabled", "disabled");
         }
