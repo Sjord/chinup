@@ -35,15 +35,16 @@
       const state = {
         correctChar: null,
         chars: [],
-        domain: 4,
+        domain: [0, 4],
         attempts: 0,
         correct: 0,
         timers: [],
         score: 100,
+        domainSize: () => state.domain[1] - state.domain[0]
       };
 
       function pickChar() {
-        const index = Math.floor(Math.random() * state.domain);
+        const index = state.domain[0] + Math.floor(Math.random() * state.domainSize());
         return state.chars[index];
       }
 
@@ -145,10 +146,10 @@
           state.score += 10;
 
           if (state.score >= 80) {
-            state.domain += 1;
+            state.domain[1] += 1;
           }
-          if (state.score < 70 && state.domain > 4) {
-            state.domain -= 1;
+          if (state.score < 70 && state.domainSize() > 4) {
+            state.domain[0] += 1;
           }
           
           setTimeout(function() {
